@@ -413,7 +413,7 @@ class XPayClient
 		$result = $this->send_post_data($url, $this->Post, null, $this->config['timeout']);
 		if ($result == false) 
 		{
-			set_curl_error();
+			$this->set_curl_error();
 			$this->log("Reporting failed: res code = ".$this->response_code."; msg = ". $this->response_msg, LGD_LOG_ERROR);
 			return false;
 		}
@@ -678,7 +678,7 @@ class XPayClient
 			foreach($postdata as $key=>$value)
 			{
 				$post_array[] = urlencode($key) . "=" . urlencode($value);
-				if(IsAcceptLog($key,LGD_LOG_DEBUG))
+				if($this->IsAcceptLog($key,LGD_LOG_DEBUG))
 				{
 					$this->log("Post [".$key."] = [".$value."]", LGD_LOG_DEBUG);
 				}
@@ -837,7 +837,7 @@ class XPayClient
 	*/
 	function StringToHex($MertKey)
 	{
-		$szKey; 
+		$szKey = []; 
 		$szMertKey = str_split($MertKey,2);
 		for ($i = 0 ; $i < 16 ; $i++)
 		{
@@ -887,8 +887,8 @@ class XPayClient
 		$LgdValue = ":LGD:".$PlainBufferTemp;
 		$PlainBuffer .= $LgdValue;
 		$key = $this->StringToHex($MertKey);
-		$EncrytBuffer = mcrypt_ecb(MCRYPT_RIJNDAEL_128,$key,$PlainBuffer,MCRYPT_ENCRYPT);
-		$EncryptAndEncodeBuffer = base64_encode($EncrytBuffer); 
+		$EncryptBuffer = openssl_encrypt($PlainBuffer, 'AES-128-CBC', $key, OPENSSL_RAW_DATA);
+		$EncryptAndEncodeBuffer = base64_encode($EncryptBuffer); 
 		$EncryptReturnValue = $EncryptAndEncodeBuffer;
 		echo "EncryptReturnValue = " . $EncryptReturnValue . "<BR>";
 		echo "EncryptAndEncode Complete<BR>";
@@ -908,7 +908,7 @@ class XPayClient
 		echo "DecodeAndDecrypt Start<BR>";
 		$key = $this->StringToHex($MertKey);
 		$DecodeBuffer = base64_decode($EncryptAndEncodeBuffer);  
-		$DecryptBuffer = mcrypt_ecb(MCRYPT_RIJNDAEL_128,$key,$DecodeBuffer,MCRYPT_DECRYPT);
+		$DecryptBuffer = openssl_decrypt($DecodeBuffer, 'AES-128-CBC', $key, OPENSSL_RAW_DATA);
 		$UnPaddString = $this->pkcs5_unpad($DecryptBuffer);
 		echo "UnPaddString : ".$UnPaddString . "<BR>";
 		echo "DecodeAndDecrypt Complete<BR>";
